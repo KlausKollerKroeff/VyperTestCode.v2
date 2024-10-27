@@ -1,4 +1,4 @@
-package frc.Java_Is_UnderControl.Cameras;
+package frc.Java_Is_UnderControl.Vision.Cameras;
 
 import org.photonvision.PhotonUtils;
 
@@ -7,8 +7,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
-import frc.Java_Is_UnderControl.PhotonVision;
 import frc.Java_Is_UnderControl.Logging.EnhancedLoggers.CustomPose3dLogger;
+import frc.Java_Is_UnderControl.Vision.PhotonVision;
 
 public class LeftArducam {
     PhotonVision vision;
@@ -34,8 +34,11 @@ public class LeftArducam {
     }
 
     public Pose2d robot2dPoseEstimation(){
-        Pose2D robotPose = PhotonUtils.estimateFieldToRobot(
-  kCameraHeight, kTargetHeight, kCameraPitch, kTargetPitch, Rotation2d.fromDegrees(-target.getYaw()), gyro.getRotation2d(), targetPose, cameraToRobot);
+        Pose2D robotPose = PhotonUtils.estimateFieldToRobot(kCameraHeight, kTargetHeight, kCameraPitch, Rotation2d.fromDegrees(vision.targetPositionY()), Rotation2d.fromDegrees(-vision.targetPositionX()), gyro.getRotation2d(), targetPose, cameraToRobot);
         return robot2DPose;
+    }
+
+    public double getAngleToTarget(){
+        return vision.getTarget().getYaw();
     }
 }

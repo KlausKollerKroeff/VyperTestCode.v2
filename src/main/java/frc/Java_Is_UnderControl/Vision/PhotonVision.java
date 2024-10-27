@@ -1,4 +1,4 @@
-package frc.Java_Is_UnderControl;
+package frc.Java_Is_UnderControl.Vision;
 
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonPipelineResult;

@@ -17,6 +17,7 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
     private String state = "ROBOT_NOT_MOVING";
     File directory;
     private static SwerveSubsystem swerveInstance = null;
+    private ChassisSpeeds desiredSpeeds;
 
     public static SwerveSubsystem getInstance() {
         if (swerveInstance == null) {
@@ -29,23 +30,6 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
         createSwerveDriveYAGSL();
     }
 
-    private boolean isControllerAskingForRotation() {
-        return controller.rotateLeft() || controller.rotateRight();
-    }
-
-    public void driveAlignAngleButton() {
-        if (this.isControllerAskingForRotation()) {
-          this.driveRotating();
-          this.state="ROBOT_MOVING_AND_ROTATING";
-          return;
-        }
-        if (controller.notUsingJoystick()) {
-          ChassisSpeeds desiredSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(),
-              controller.getXtranslation());
-          this.state = "ROBOT_MOVING";
-        }
-    }    
-
     private void createSwerveDriveYAGSL(){
         try {
             this.swerveDrive = new SwerveParser(this.directory).createSwerveDrive(SwerveConstants.MAX_VEL);
@@ -54,8 +38,28 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
         }
     }
 
-    public void driveRotating() {
-        ChassisSpeeds desiredSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(), controller.getXtranslation());
+    @Override
+    public void driveAlignAngleButton() {
+        if (this.isControllerAskingForRotation()) {
+          this.driveRotating();
+          this.state="ROBOT_MOVING_AND_ROTATING";
+          return;
+        }
+        if (controller.notUsingJoystick()) {
+          this.desiredSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(),
+              controller.getXtranslation());
+          this.state = "ROBOT_MOVING";
+        }
+    }    
+
+    @Override
+    public void driveAlignAngleTarget(double driveAngleToTarget){
+        this.desiredSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(), controller.getXtranslation());
+        desiredSpeeds = new ChassisSpeeds(desiredSpeeds.vxMetersPerSecond, desiredSpeeds.vyMetersPerSecond, driveAngleToTarget * SwerveConstants.kP);
+    }
+
+    private void driveRotating() {
+        this.desiredSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(), controller.getXtranslation());
         if (this.controller.rotateLeft()) {
             desiredSpeeds = new ChassisSpeeds(desiredSpeeds.vxMetersPerSecond, desiredSpeeds.vyMetersPerSecond,
             SwerveConstants.ROTATION_BUTTON_SPEED);
@@ -63,6 +67,10 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
             desiredSpeeds = new ChassisSpeeds(desiredSpeeds.vxMetersPerSecond, desiredSpeeds.vyMetersPerSecond,
             -SwerveConstants.ROTATION_BUTTON_SPEED);
         }
+    }
+
+    private boolean isControllerAskingForRotation() {
+        return controller.rotateLeft() || controller.rotateRight();
     }
 
     protected ChassisSpeeds inputsToChassisSpeeds(double xInput, double yInput) {
