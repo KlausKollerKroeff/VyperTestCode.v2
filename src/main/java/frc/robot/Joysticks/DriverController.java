@@ -6,7 +6,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Constants.JoystickConstants;
+import frc.robot.constants.JoystickConstants;
 
 public class DriverController implements IDriverController {
 
@@ -61,15 +61,6 @@ public class DriverController implements IDriverController {
   @Override
   public boolean turboActivate() {
     return 0.2 < driverController.getRightTriggerAxis();
-  }
-
-  @Override
-  public boolean notUsingJoystick() {
-    return frc.Java_Is_UnderControl.Util.Util.inRange(getCOS_Joystick(),
-        -JoystickConstants.DEADBAND,
-        0.2)
-        && frc.Java_Is_UnderControl.Util.Util.inRange(getSIN_Joystick(), -JoystickConstants.DEADBAND,
-            JoystickConstants.DEADBAND);
   }
 
   @Override

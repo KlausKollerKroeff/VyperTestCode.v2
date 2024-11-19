@@ -3,7 +3,12 @@ package frc.robot.subsystems.swerve;
 import java.io.File;
 import swervelib.parser.SwerveParser;
 import swervelib.SwerveDrive;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.Java_Is_UnderControl.Logging.EnhancedLoggers.CustomStringLogger;
 import frc.robot.Joysticks.ControlBoard;
@@ -18,6 +23,7 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
     File directory;
     private static SwerveSubsystem swerveInstance = null;
     private ChassisSpeeds desiredSpeeds;
+    Pose2d targetAimPose;
 
     public static SwerveSubsystem getInstance() {
         if (swerveInstance == null) {
@@ -32,7 +38,7 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
 
     private void createSwerveDriveYAGSL(){
         try {
-            this.swerveDrive = new SwerveParser(this.directory).createSwerveDrive(SwerveConstants.MAX_VEL);
+            this.swerveDrive = new SwerveParser(new File("deploy/swerve/swerve")).createSwerveDrive(SwerveConstants.MAX_VEL);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -44,18 +50,44 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
           this.driveRotating();
           this.state="ROBOT_MOVING_AND_ROTATING";
           return;
-        }
-        if (controller.notUsingJoystick()) {
-          this.desiredSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(),
-              controller.getXtranslation());
+        } else {
+          this.desiredSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(),controller.getXtranslation());
+          swerveDrive.driveFieldOriented(desiredSpeeds);
           this.state = "ROBOT_MOVING";
         }
     }    
 
     @Override
-    public void driveAlignAngleTarget(double driveAngleToTarget){
-        this.desiredSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(), controller.getXtranslation());
-        desiredSpeeds = new ChassisSpeeds(desiredSpeeds.vxMetersPerSecond, desiredSpeeds.vyMetersPerSecond, driveAngleToTarget * SwerveConstants.kP);
+    public void driveAlignAngleTarget(Rotation2d angleToTarget, ChassisSpeeds chassisSpeeds){
+        desiredSpeeds = new ChassisSpeeds(chassisSpeeds.vxMetersPerSecond, chassisSpeeds.vyMetersPerSecond, angleToTarget.getRadians() * SwerveConstants.kP);
+        swerveDrive.driveFieldOriented(desiredSpeeds);
+    }
+
+    @Override
+    public void driveAlignAngleSpeaker(){
+        Alliance alliance = DriverStation.getAlliance().isPresent() ? DriverStation.getAlliance().get() : Alliance.Red;
+        ChassisSpeeds chassisSpeeds = this.inputsToChassisSpeeds(controller.getYtranslation(), controller.getXtranslation());
+        Rotation2d spinCompensationAngle = Rotation2d.fromDegrees(-7);
+        if(alliance == Alliance.Red){
+            Translation2d positionDifference = this.getPose().getTranslation().minus(targetPosition);
+            Rotation2d targetAngle = positionDifference.getAngle().plus(offsetAngle);
+            this.driveAlignAngleTarget(targetAngle, chassisSpeeds);
+        }
+    }
+
+    protected SwerveSubsystem getPose(){
+        return swerveInstance.getPose();
+    }
+
+    protected SwerveSubsystem getTranslation(){
+        return swerveDrive.
+    }
+
+    protected void driveAimingAtPosition(ChassisSpeeds targetSpeeds, Translation2d targetPosition, Rotation2d offsetAngle) {
+    this.targetAimPose = new Pose2d(targetPosition, new Rotation2d());
+    Translation2d positionDifference = this.getPose().getTranslation().minus(targetPosition);
+    Rotation2d targetAngle = positionDifference.getAngle().plus(offsetAngle);
+    this.driveFieldOrientedLockedAngle(targetSpeeds, targetAngle);
     }
 
     private void driveRotating() {
@@ -67,6 +99,7 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
             desiredSpeeds = new ChassisSpeeds(desiredSpeeds.vxMetersPerSecond, desiredSpeeds.vyMetersPerSecond,
             -SwerveConstants.ROTATION_BUTTON_SPEED);
         }
+        swerveDrive.driveFieldOriented(desiredSpeeds);
     }
 
     private boolean isControllerAskingForRotation() {
@@ -76,6 +109,8 @@ public class SwerveSubsystem extends SubsystemBase implements ISwerve{
     protected ChassisSpeeds inputsToChassisSpeeds(double xInput, double yInput) {
         return new ChassisSpeeds(xInput * SwerveConstants.MAX_VEL, yInput * SwerveConstants.MAX_VEL, 0);
     }
+
+
 
     @Override
     public void periodic(){

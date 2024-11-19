@@ -47,11 +47,6 @@ public class ControlBoard implements IDriverController, IOperatorController {
   }
 
   @Override
-  public boolean notUsingJoystick() {
-    return mDriverController.notUsingJoystick();
-  }
-
-  @Override
   public Trigger setHeadingBack() {
     return mDriverController.setHeadingBack();
   }

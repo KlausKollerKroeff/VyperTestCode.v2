@@ -13,8 +13,6 @@ public interface IDriverController {
 
   boolean turboActivate();
 
-  boolean notUsingJoystick();
-
   Trigger setHeadingFront();
 
   Trigger setHeadingRight();
